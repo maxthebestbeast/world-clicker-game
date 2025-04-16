@@ -56,6 +56,7 @@
       background: url('https://i.imgur.com/4HJbzEq.png') center/cover no-repeat;
       animation: explode 0.6s ease-out forwards;
       pointer-events: none;
+      z-index: 999;
     }
 
     @keyframes explode {
@@ -69,7 +70,7 @@
       }
     }
 
-    /* Screen flash for nuke */
+    /* Screen flash */
     .flash {
       position: fixed;
       top: 0; left: 0;
@@ -129,6 +130,12 @@
       counter.textContent = dp.toLocaleString();
     }
 
+    function updateUpgradeText() {
+      document.getElementById('buyBomb').textContent = `💣 Buy Bomb (Cost: ${bombCost}) [+1 DPS]`;
+      document.getElementById('buyMissile').textContent = `🚀 Buy Missile (Cost: ${missileCost}) [+5 DPS]`;
+      document.getElementById('buyNuke').textContent = `☢️ Buy Nuke (Cost: ${nukeCost}) [+25 DPS]`;
+    }
+
     function createExplosion(x, y) {
       const explosion = document.createElement('div');
       explosion.className = 'explosion';
@@ -145,6 +152,29 @@
       setTimeout(() => flash.remove(), 300);
     }
 
+    function saveGame() {
+      localStorage.setItem('destroyerSave', JSON.stringify({
+        dp, dps, bombCount, missileCount, nukeCount,
+        bombCost, missileCost, nukeCost
+      }));
+    }
+
+    function loadGame() {
+      const saved = JSON.parse(localStorage.getItem('destroyerSave'));
+      if (saved) {
+        dp = saved.dp || 0;
+        dps = saved.dps || 0;
+        bombCount = saved.bombCount || 0;
+        missileCount = saved.missileCount || 0;
+        nukeCount = saved.nukeCount || 0;
+        bombCost = saved.bombCost || 50;
+        missileCost = saved.missileCost || 250;
+        nukeCost = saved.nukeCost || 1000;
+        updateUpgradeText();
+        updateDisplay();
+      }
+    }
+
     clickButton.addEventListener('click', (e) => {
       dp += 1;
       updateDisplay();
@@ -157,7 +187,7 @@
         bombCount++;
         dps += 1;
         bombCost = Math.floor(bombCost * 1.5);
-        document.getElementById('buyBomb').textContent = `💣 Buy Bomb (Cost: ${bombCost}) [+1 DPS]`;
+        updateUpgradeText();
         updateDisplay();
       }
     });
@@ -168,7 +198,7 @@
         missileCount++;
         dps += 5;
         missileCost = Math.floor(missileCost * 1.6);
-        document.getElementById('buyMissile').textContent = `🚀 Buy Missile (Cost: ${missileCost}) [+5 DPS]`;
+        updateUpgradeText();
         updateDisplay();
       }
     });
@@ -179,7 +209,7 @@
         nukeCount++;
         dps += 25;
         nukeCost = Math.floor(nukeCost * 1.75);
-        document.getElementById('buyNuke').textContent = `☢️ Buy Nuke (Cost: ${nukeCost}) [+25 DPS]`;
+        updateUpgradeText();
         flashScreen();
         updateDisplay();
       }
@@ -191,16 +221,23 @@
         <h1 class="fade-out" style="color: red; font-size: 60px; margin-top: 100px;">🌍💥 THE WORLD IS GONE 💥🌍</h1>
         <p style="color: #ccc; font-size: 24px;">You reached 1 TRILLION DP and unleashed ultimate destruction.<br>The skies burned. The seas boiled. All is ash.</p>
       `;
+      localStorage.removeItem('destroyerSave');
     });
 
+    // Game loop
     setInterval(() => {
       dp += dps;
       updateDisplay();
-
       if (dp >= 1_000_000_000_000) {
         endWorldBtn.style.display = 'inline-block';
       }
     }, 1000);
+
+    // Save every 3 seconds
+    setInterval(saveGame, 3000);
+
+    // Load on start
+    loadGame();
   </script>
 
 </body>
